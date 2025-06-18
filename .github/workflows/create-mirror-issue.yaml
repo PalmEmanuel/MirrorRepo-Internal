@@ -1,0 +1,98 @@
+name: Create Mirror Issue
+
+on:
+  repository_dispatch:
+    types: [mirror]
+
+jobs:
+  mirror-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate JWT Token
+        id: generate-jwt
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-jwt@main
+        with:
+          clientId: ${{ secrets.GH_APP_CLIENT_ID }}
+          privateKey: ${{ secrets.GH_APP_PRIVATE_KEY }}
+        
+      - name: Get Installation Token
+        id: get-installation-token
+        shell: pwsh
+        env:
+          JWT: ${{ steps.generate-jwt.outputs.token }}
+        run: |
+            $Headers = @{
+                Accept = "application/vnd.github+json"
+                Authorization = "Bearer ${{ env.JWT }}"
+            }
+            
+            $Installations = Invoke-RestMethod -Uri "https://api.github.com/app/installations" -Headers $Headers
+            $InstallationId = ($Installations | Where-Object { $_.account.login -eq "${{ github.repository_owner }}" }).id
+            
+            # Get an installation token
+            $TokenResponse = Invoke-RestMethod -Uri "https://api.github.com/app/installations/$InstallationId/access_tokens" -Headers $Headers -Method Post
+            $InstallationToken = $TokenResponse.token
+            
+            $Headers['Authorization'] = "Bearer $InstallationToken"
+
+            Add-Content -Path $env:GITHUB_ENV -Value "token=$InstallationToken"
+          
+    
+      - name: Create Mirror Issue
+        shell: pwsh
+        env:
+          SOURCE_ISSUE_LINK: ${{ github.event.client_payload.issue_link }}
+          TOKEN: ${{ steps.get-installation-token.outputs.token }}
+        run: |
+          $IssueLink = $env:ISSUE_LINK
+
+          $Body = @"
+          A new issue has been created in the Core repository. Please check it out [here]($($env:SOURCE_ISSUE_LINK)).
+          "@
+
+          $Headers = @{
+              Authorization = "Bearer ${{ env.TOKEN }}"
+          }
+
+          $IssueBody = @{
+              title = $IssueTitle
+              body  = $Body
+          } | ConvertTo-Json
+
+          $Uri = "https://api.github.com/repos/${{ github.repository }}/issues"
+
+          $IssueResult = Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $IssueBody -ContentType 'application/json'
+
+          Add-Content -Path $env:GITHUB_ENV -Value "issueLink=$($IssueResult.html_url)"
+
+      - name: Comment Issue Link Back
+        shell: pwsh
+        env:
+          SOURCE_ISSUE_NUMBER: ${{ github.event.client_payload.issue_number }}
+          SOURCE_REPO: ${{ github.event.client_payload.source_repo }}
+          TOKEN: ${{ steps.get-installation-token.outputs.token }}
+        run: |
+            $Headers = @{
+                Accept = "application/vnd.github+json"
+                Authorization = "Bearer ${{ env.TOKEN }}"
+            }
+            
+            $Body = @{
+                body = "Thanks for opening this issue! :star:
+
+            This issue has been mirrored in the internal repository at $($env:ISSUE_LINK) :repeat:
+
+            Have you heard of [PowerShell Conference Europe](https://psconf.eu)? It's a great place to discuss challenges and solutions for PowerShell and related technologies! :computer:"
+            } | ConvertTo-Json
+            
+            $Params = @{
+                Uri = "https://api.github.com/repos/${{ env.SOURCE_REPO }}/issues/${{ env.SOURCE_ISSUE_NUMBER }}/comments"
+                Headers = $Headers
+                Method = 'Post'
+                Body = $Body
+                ContentType = 'application/json'
+            }
+                
+            Invoke-RestMethod @Params
+          
+        
