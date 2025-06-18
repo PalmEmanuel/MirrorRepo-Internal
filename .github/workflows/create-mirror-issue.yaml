@@ -29,19 +29,15 @@ jobs:
           SOURCE_ISSUE_LINK: ${{ github.event.client_payload.issue_link }}
           TOKEN: ${{ steps.get-installation-token.outputs.token }}
         run: |
-          $IssueLink = $env:ISSUE_LINK
-
-          $Body = @"
-          A new issue has been created in the Core repository. Please check it out [here]($($env:SOURCE_ISSUE_LINK)).
-          "@
-
           $Headers = @{
               Authorization = "Bearer ${{ env.TOKEN }}"
           }
 
           $IssueBody = @{
               title = $IssueTitle
-              body  = $Body
+              body  = @"
+          A new issue has been created in the Core repository. Please check it out [here]($($env:SOURCE_ISSUE_LINK)).
+          "@
           } | ConvertTo-Json
 
           $Uri = "https://api.github.com/repos/${{ github.repository }}/issues"
