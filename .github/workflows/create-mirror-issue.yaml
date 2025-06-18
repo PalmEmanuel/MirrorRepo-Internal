@@ -10,35 +10,20 @@ jobs:
     steps:
       - name: Generate JWT Token
         id: generate-jwt
-        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-jwt@main
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-jwt@demo-2
         with:
           clientId: ${{ secrets.GH_APP_CLIENT_ID }}
           privateKey: ${{ secrets.GH_APP_PRIVATE_KEY }}
         
       - name: Get Installation Token
         id: get-installation-token
-        shell: pwsh
-        env:
-          JWT: ${{ steps.generate-jwt.outputs.token }}
-        run: |
-            $Headers = @{
-                Accept = "application/vnd.github+json"
-                Authorization = "Bearer ${{ env.JWT }}"
-            }
-            
-            $Installations = Invoke-RestMethod -Uri "https://api.github.com/app/installations" -Headers $Headers
-            $InstallationId = ($Installations | Where-Object { $_.account.login -eq "${{ github.repository_owner }}" }).id
-            
-            # Get an installation token
-            $TokenResponse = Invoke-RestMethod -Uri "https://api.github.com/app/installations/$InstallationId/access_tokens" -Headers $Headers -Method Post
-            $InstallationToken = $TokenResponse.token
-            
-            $Headers['Authorization'] = "Bearer $InstallationToken"
-
-            Add-Content -Path $env:GITHUB_ENV -Value "token=$InstallationToken"
-          
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-installation-token@demo-2
+        with:
+          account: ${{ github.repository_owner }}
+          jwt: ${{ steps.generate-jwt.outputs.token }}
     
       - name: Create Mirror Issue
+        id: create-mirror-issue
         shell: pwsh
         env:
           SOURCE_ISSUE_LINK: ${{ github.event.client_payload.issue_link }}
@@ -65,34 +50,19 @@ jobs:
 
           Add-Content -Path $env:GITHUB_ENV -Value "issueLink=$($IssueResult.html_url)"
 
-      - name: Comment Issue Link Back
-        shell: pwsh
+      - name: Comment on Original Issue
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/comment-issue@demo-2
         env:
-          SOURCE_ISSUE_NUMBER: ${{ github.event.client_payload.issue_number }}
-          SOURCE_REPO: ${{ github.event.client_payload.source_repo }}
-          TOKEN: ${{ steps.get-installation-token.outputs.token }}
-        run: |
-            $Headers = @{
-                Accept = "application/vnd.github+json"
-                Authorization = "Bearer ${{ env.TOKEN }}"
-            }
+          ISSUE_LINK: ${{ steps.create-mirror-issue.outputs.issueLink }}
+        with:
+          token: ${{ steps.get-installation-token.outputs.token }}
+          issue_number: ${{ github.event.client_payload.issue_number }}
+          repository: ${{ github.event.client_payload.source_repo }}
+          body: |
+            Thanks for opening this issue! :star:
             
-            $Body = @{
-                body = "Thanks for opening this issue! :star:
+            This issue has been mirrored in the internal repository at ${{ env.ISSUE_LINK }} :repeat:
 
-            This issue has been mirrored in the internal repository at $($env:ISSUE_LINK) :repeat:
+            Have you heard of [PowerShell Conference Europe](https://psconf.eu)? It's a great place to discuss challenges and solutions for PowerShell and related technologies! :computer:
 
-            Have you heard of [PowerShell Conference Europe](https://psconf.eu)? It's a great place to discuss challenges and solutions for PowerShell and related technologies! :computer:"
-            } | ConvertTo-Json
-            
-            $Params = @{
-                Uri = "https://api.github.com/repos/${{ env.SOURCE_REPO }}/issues/${{ env.SOURCE_ISSUE_NUMBER }}/comments"
-                Headers = $Headers
-                Method = 'Post'
-                Body = $Body
-                ContentType = 'application/json'
-            }
-                
-            Invoke-RestMethod @Params
-          
         
