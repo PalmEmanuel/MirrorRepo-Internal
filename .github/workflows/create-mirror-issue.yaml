@@ -51,8 +51,6 @@ jobs:
 
       - name: Comment on Original Issue
         uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/comment-issue@demo-2
-        env:
-          ISSUE_LINK: ${{ steps.create-mirror-issue.outputs.issueLink }}
         with:
           token: ${{ steps.get-installation-token.outputs.token }}
           issue_number: ${{ github.event.client_payload.issue_number }}
@@ -60,7 +58,7 @@ jobs:
           body: |
             Thanks for opening this issue! :star:
             
-            This issue has been mirrored in the internal repository at ${{ env.ISSUE_LINK }} :repeat:
+            This issue has been mirrored in the internal repository at $($env.issueLink) :repeat:
 
             Have you heard of [PowerShell Conference Europe](https://psconf.eu)? It's a great place to discuss challenges and solutions for PowerShell and related technologies! :computer:
 
