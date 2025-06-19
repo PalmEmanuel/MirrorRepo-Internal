@@ -58,7 +58,7 @@ jobs:
           body: |
             Thanks for opening this issue! :star:
             
-            This issue has been mirrored in the internal repository at $($env.issueLink) :repeat:
+            This issue has been mirrored in the internal repository at $($env:issueLink) :repeat:
 
             Have you heard of [PowerShell Conference Europe](https://psconf.eu)? It's a great place to discuss challenges and solutions for PowerShell and related technologies! :computer:
 
