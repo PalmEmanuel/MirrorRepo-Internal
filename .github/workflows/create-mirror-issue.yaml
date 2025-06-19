@@ -39,7 +39,7 @@ jobs:
           $IssueBody = @{
               title = $IssueTitle
               body  = @"
-          A new issue has been created in the Core repository. Please check it out [here]($($env:SOURCE_ISSUE_LINK)).
+          A new issue has been created in the Core repository. Please check it out at $($env:SOURCE_ISSUE_LINK).
           "@
           } | ConvertTo-Json
 
