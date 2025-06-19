@@ -27,8 +27,10 @@ jobs:
         shell: pwsh
         env:
           SOURCE_ISSUE_LINK: ${{ github.event.client_payload.issue_link }}
+          SOURCE_ISSUE_TITLE: ${{ github.event.client_payload.issue_title }}
           ACCESS_TOKEN: ${{ steps.get-installation-token.outputs.token }}
         run: |
+          $IssueTitle = $env:SOURCE_ISSUE_TITLE
           $Token = if ($env:ACCESS_TOKEN) { $env:ACCESS_TOKEN } else { $env:token }
           $Headers = @{
               Authorization = "Bearer $Token"
