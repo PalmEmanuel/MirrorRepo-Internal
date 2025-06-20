@@ -5,8 +5,10 @@ on:
     types: [mirror]
 
 jobs:
-  mirror-issue:
+  get-token:
     runs-on: ubuntu-latest
+    outputs:
+      token: ${{ steps.get-installation-token.outputs.token }}
     steps:
       - name: Generate JWT Token
         id: generate-jwt
@@ -22,18 +24,22 @@ jobs:
           account: ${{ github.repository_owner }}
           jwt: ${{ steps.generate-jwt.outputs.token }}
     
+  mirror-issue:
+    runs-on: ubuntu-latest
+    needs:
+      get-token
+    steps:
       - name: Create Mirror Issue
         id: create-mirror-issue
         shell: pwsh
         env:
           SOURCE_ISSUE_LINK: ${{ github.event.client_payload.issue_link }}
           SOURCE_ISSUE_TITLE: ${{ github.event.client_payload.issue_title }}
-          ACCESS_TOKEN: ${{ steps.get-installation-token.outputs.token }}
+          ACCESS_TOKEN: ${{ needs.get-token.outputs.token }}
         run: |
           $IssueTitle = $env:SOURCE_ISSUE_TITLE
-          $Token = if ($env:ACCESS_TOKEN) { $env:ACCESS_TOKEN } else { $env:token }
           $Headers = @{
-              Authorization = "Bearer $Token"
+              Authorization = "Bearer $($env:ACCESS_TOKEN)"
           }
 
           $IssueBody = @{
