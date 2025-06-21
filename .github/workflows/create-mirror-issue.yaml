@@ -8,19 +8,13 @@ jobs:
   mirror-issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate JWT Token
-        id: generate-jwt
-        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-jwt@demo-2
+      - name: Get Installation Token
+        id: get-installation-token
+        uses: ./.github/actions/create-installation-token
         with:
           clientId: ${{ secrets.GH_APP_CLIENT_ID }}
           privateKey: ${{ secrets.GH_APP_PRIVATE_KEY }}
-        
-      - name: Get Installation Token
-        id: get-installation-token
-        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-installation-token@demo-2
-        with:
           account: ${{ github.repository_owner }}
-          jwt: ${{ steps.generate-jwt.outputs.token }}
     
       - name: Create Mirror Issue
         id: create-mirror-issue
@@ -28,16 +22,14 @@ jobs:
         env:
           SOURCE_ISSUE_LINK: ${{ github.event.client_payload.issue_link }}
           SOURCE_ISSUE_TITLE: ${{ github.event.client_payload.issue_title }}
-          ACCESS_TOKEN: ${{ steps.get-installation-token.outputs.token }}
+          TOKEN: ${{ steps.get-installation-token.outputs.token }}
         run: |
-          $IssueTitle = $env:SOURCE_ISSUE_TITLE
-          $Token = if ($env:ACCESS_TOKEN) { $env:ACCESS_TOKEN } else { $env:token }
           $Headers = @{
-              Authorization = "Bearer $Token"
+              Authorization = "Bearer $($env:TOKEN)"
           }
 
           $IssueBody = @{
-              title = $IssueTitle
+              title = $env:SOURCE_ISSUE_TITLE
               body  = @"
           A new issue has been created in the Core repository. Please check it out at $($env:SOURCE_ISSUE_LINK).
           "@
@@ -50,7 +42,7 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "issueLink=$($IssueResult.html_url)"
 
       - name: Comment on Original Issue
-        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/comment-issue@demo-2
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/comment-issue@demo-3
         with:
           token: ${{ steps.get-installation-token.outputs.token }}
           issue_number: ${{ github.event.client_payload.issue_number }}
