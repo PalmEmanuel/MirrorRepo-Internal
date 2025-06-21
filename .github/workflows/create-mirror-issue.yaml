@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Get Installation Token
         id: get-installation-token
-        uses: ./.github/actions/create-installation-token
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-installation-token@demo-3
         with:
           clientId: ${{ secrets.GH_APP_CLIENT_ID }}
           privateKey: ${{ secrets.GH_APP_PRIVATE_KEY }}
