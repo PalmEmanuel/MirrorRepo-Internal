@@ -1,0 +1,11 @@
+{
+  "# Add trigger": {
+    "prefix": "# Add trigger",
+    "body": [
+      "on:",
+      "  repository_dispatch:",
+      "    types: [mirror]"
+    ],
+    "description": "# Add trigger"
+  }
+}
