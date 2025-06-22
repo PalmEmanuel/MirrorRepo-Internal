@@ -1,14 +1,21 @@
 name: Create Mirror Issue
 
-# Add trigger
+on:
+  repository_dispatch:
+    types: [mirror]
 
 jobs:
   mirror-issue:
     runs-on: ubuntu-latest
     steps:
 
-      # Get Installation Token
-      # Copy and modify
+      - name: Get Installation Token
+        id: get-installation-token
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-installation-token@demo-3
+        with:
+          clientId: ${{ secrets.GH_APP_CLIENT_ID }}
+          privateKey: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          account: ${{ github.repository_owner }}
     
       - name: Create Mirror Issue
         id: create-mirror-issue
@@ -34,6 +41,16 @@ jobs:
           # Can also add environment vars instead of output
           Add-Content -Path $env:GITHUB_ENV -Value "issueLink=$($IssueResult.html_url)"
 
-      # Comment on Original Issue
-      # Copy and modify
-      ## This issue has been mirrored in the internal repository at $($env:issueLink) :repeat:
+      # Modified comment step
+      - name: Comment on Original Issue
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/comment-issue@demo-3
+        with:
+          token: ${{ steps.get-installation-token.outputs.token }}
+          issue_number: ${{ github.event.client_payload.issue_number }}
+          repository: ${{ github.event.client_payload.source_repo }}
+          body: |
+            Thanks for opening this issue! :star:
+            
+            This issue has been mirrored in the internal repository at $($env:issueLink) :repeat:
+
+            Have you heard of [PowerShell Conference Europe](https://psconf.eu)? It's a great place to discuss challenges and solutions for PowerShell and related technologies! :computer:
