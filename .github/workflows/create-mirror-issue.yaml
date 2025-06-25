@@ -1,14 +1,21 @@
 name: Create Mirror Issue
 
-# Add trigger
+on:
+  repository_dispatch:
+    types: [mirror]
 
 jobs:
   mirror-issue:
     runs-on: ubuntu-latest
     steps:
 
-      # Get Installation Token
-      # Copy and modify
+      - name: Get Installation Token
+        id: get-installation-token
+        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-installation-token@demo-3
+        with:
+          clientId: ${{ secrets.GH_APP_CLIENT_ID }}
+          privateKey: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          account: ${{ github.repository_owner }}
     
       - name: Create Mirror Issue
         id: create-mirror-issue
