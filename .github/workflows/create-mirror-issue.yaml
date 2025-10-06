@@ -11,7 +11,7 @@ jobs:
 
       - name: Get Installation Token
         id: get-installation-token
-        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/create-installation-token@demo-3
+        uses: PalmEmanuel/MirrorRepo-Core/.github/actions/create-installation-token@demo-3
         with:
           clientId: ${{ secrets.GH_APP_CLIENT_ID }}
           privateKey: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -43,7 +43,7 @@ jobs:
 
       # Modified comment step
       - name: Comment on Original Issue
-        uses: PalmEmanuel/PSConfEU2025-Core/.github/actions/comment-issue@demo-3
+        uses: PalmEmanuel/MirrorRepo-Core/.github/actions/comment-issue@demo-3
         with:
           token: ${{ steps.get-installation-token.outputs.token }}
           issue_number: ${{ github.event.client_payload.issue_number }}
@@ -52,5 +52,3 @@ jobs:
             Thanks for opening this issue! :star:
             
             This issue has been mirrored in the internal repository at ${{ env.issueLink }} :repeat:
-
-            Have you heard of [PowerShell Conference Europe](https://psconf.eu)? It's a great place to discuss challenges and solutions for PowerShell and related technologies! :computer:
